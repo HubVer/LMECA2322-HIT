@@ -15,7 +15,7 @@ for i, dir in enumerate(directories):
 
     for file in files:
         j, k = int(file[2]), int(file[4]) # get indices from file name
-        u_velocities[i][j][k] = np.loadtxt('Data/'+dir+'/'+file)[:,0] # get u velocity
+        u_velocities[i][j][k] = np.loadtxt('Data/'+dir+'/'+file)[:,i] # get u velocity
 
 
 
