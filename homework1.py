@@ -30,7 +30,10 @@ def diss_rate(velocities, nu):
     # TKE: scalar value of Turbulent Kinetic Energy
     # nu: kinematic viscosity
     # returns: scalar value of dissipation rate
-    return 0
+    L = 2*np.pi
+    dx = L / 32768
+    du_dx = (np.roll(velocities, -2) - 8*np.roll(velocities, -1) + 8*np.roll(velocities, 1) - np.roll(velocities, 2)) / (12 * dx)
+    return 15*nu*np.mean(du_dx**2)
 
 
 def integral_length_scale(k, e):
