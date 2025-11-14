@@ -53,6 +53,7 @@ def Reynolds(k, e, nu):
     L = integral_length_scale(k, e)
     return (k**2) / (nu * e)
 
+
 def Kolomogorov_length_scale(nu, e):
     # Compute the Kolomogorov length scale
     # nu: kinematic viscosity
@@ -82,7 +83,7 @@ def Reynolds_Taylor(k, e, nu, lambda_t):
 if __name__ == "__main__":
     nu = 1.10555e-5 # kinematic viscosity used  (m^2/s)
 
-    velocities = fetch_data()
+    velocities = fetch_data() # fetch u velocity data
 
     k = TKE(velocities)
     print("k : "+str(k))
