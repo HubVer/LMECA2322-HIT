@@ -5,7 +5,7 @@ import os
 
 
 def fetch_data():
-    u_velocities = np.zeros((3, 4, 4, 32768))
+    u_velocities = np.zeros((3, 4, 4, 32768)) # 32768 the same for all files
 
     directories = sorted(os.listdir('Data'))[2:] # index to remove some unwanted files
     for i, dir in enumerate(directories):
@@ -25,7 +25,7 @@ def TKE(velocities):
     return 1.5 * np.mean(velocities**2)
 
 
-def diss_rate(k, nu):
+def diss_rate(velocities, nu):
     # Compute the dissipation rate of TKE
     # TKE: scalar value of Turbulent Kinetic Energy
     # nu: kinematic viscosity
