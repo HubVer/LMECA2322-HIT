@@ -13,7 +13,7 @@ def fetch_data():
 
         for file in files:
             j, k = int(file[2]), int(file[4]) # get indices from file name
-            u_velocities[i][j][k] = np.loadtxt('Data/'+dir+'/'+file)[:,i] # get u velocity
+            u_velocities[i][j][k] = np.loadtxt('Data/'+dir+'/'+file)[:,0] # get u velocity
 
     return u_velocities
 
@@ -80,10 +80,15 @@ def Reynolds_Taylor(k, e, nu, lambda_t):
     return lambda_t / nu * np.sqrt(2 * k / 3)
 
 
+def structure_fuctions(velocities):
+    pass
+
+
 if __name__ == "__main__":
     nu = 1.10555e-5 # kinematic viscosity used  (m^2/s)
 
     velocities = fetch_data() # fetch u velocity data
+    print(velocities)
 
     k = TKE(velocities)
     print("k : "+str(k))
