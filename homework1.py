@@ -1,28 +1,25 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy
-import os
 
 
-def fetch_data():
-    u_velocities = np.zeros((3, 4, 4, 32768)) # 32768 the same for all files
-
-    directories = sorted(os.listdir('Data'))[2:] # index to remove some unwanted files
-    for i, dir in enumerate(directories):
-        files = sorted(os.listdir('Data/'+dir))[1:] # index to remove unwanted files
-
-        for file in files:
-            j, k = int(file[2]), int(file[4]) # get indices from file name
-            u_velocities[i][j][k] = np.loadtxt('Data/'+dir+'/'+file)[:,0] # get u velocity
-
-    return u_velocities
+def fetch_data(x):
+    u = {"x": [], "y": [], "z": []}
+    directions = ["x", "y", "z"]
+    for m in directions:
+        for i in range(4):
+            for j in range(4):
+                data = np.loadtxt(f"Data/pencils_{m}/{m}_{i}_{j}.txt")
+                u[m].append(data[:, x])
+    u = np.concatenate([u["x"], u["y"], u["z"]])
+    return u
 
 
-def TKE(velocities):
+def TKE(u, v, w):
     # Compute the Turbulent Kinetic Energy (TKE) for homgeoneous isotropic turbulence
     # velocities: numpy array of shape (3, 4, 4, n) containing velocity components where n is the number of data points
     # returns: scalar value of TKE
-    return 1.5 * np.mean(velocities**2)
+    return 1.5 * np.mean(u**2), 0.5 * (np.mean(u*u) + np.mean(v*v) + np.mean(w*w))
 
 
 def diss_rate(velocities, nu):
@@ -87,12 +84,14 @@ def structure_fuctions(velocities):
 if __name__ == "__main__":
     nu = 1.10555e-5 # kinematic viscosity used  (m^2/s)
 
-    velocities = fetch_data() # fetch u velocity data
-    print(velocities)
+    u = fetch_data(0) # fetch u velocity data
+    v = fetch_data(1) # fetch v velocity data
+    w = fetch_data(2) # fetch w velocity data
 
-    k = TKE(velocities)
+    k, k_anis = TKE(u, v, w)
     print("k : "+str(k))
-    e = diss_rate(velocities,nu)
+    print("k anisotropic : "+str(k_anis))
+    e = diss_rate(u ,nu)
     print("epsilon : "+str(e))
     L = integral_length_scale(k,e)
     print("L : "+str(L))
