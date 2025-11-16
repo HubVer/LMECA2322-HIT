@@ -113,16 +113,22 @@ def Reynolds_Taylor(k, e, nu, lambda_t):
     return lambda_t / nu * np.sqrt(2 * k / 3)
 
 
-def structure_fuctions(u, v, w, r):
-    indexes = np.arange(0, len(u["x"][0]), r, dtype=int)
-    D11 = []
-    D22 = []
-    D33 = []
-    for i in range(len(indexes)-1):
-        D11.append(np.mean( (u["x"][0][indexes[i+1]] - u["x"][0][indexes[i]])**2 ))
-        D22.append(np.mean( (v["y"][0][indexes[i+1]] - v["y"][0][indexes[i]])**2 ))
-        D33.append(np.mean( (w["z"][0][indexes[i+1]] - w["z"][0][indexes[i]])**2 ))
-    return np.mean(D11), ( np.mean(D22) + np.mean(D33) )/2
+def structure_functions(u, rmax, dx):
+    indexes = np.arange(0, rmax+1, dtype=int)
+    D = []
+    for i in indexes:
+        D.append(np.mean(u[i:] - u[:-i])**2)
+    return np.array(indexes) * dx, np.array(D)
+
+def plot_structure_functions(r, D11, D22):
+    plt.loglog(r, D11, label="D11")
+    plt.loglog(r, D22, label="D22")
+    plt.xlabel("r")
+    plt.ylabel("Dij")
+    plt.legend()
+    plt.grid()
+    plt.savefig("structure_functions.png")
+    plt.show()
 
 
 if __name__ == "__main__":
@@ -141,8 +147,28 @@ if __name__ == "__main__":
     eta = Kolomogorov_length_scale(nu,e)
     print("Kolomogorov length scale eta :", eta)
     print("rmax :", eta*5e3)
+    print("compared to L/N :", L/32768)
 
-    r = np.linspace(1, eta*5e3, 1000)
+    r = np.logspace(L/32768, eta*5e3, 5000)
+    D11all = []
+    D22all = []
+    D33all = []
+    r_list = []
+    dx = L / 32768
+    r_max = int(min(32768 // 2, np.floor(5000.0 * eta / dx)))
+    for l in range(16):
+        if r_max >= 1:
+            r, D11 = structure_functions(u["x"][l], r_max, dx)
+            _, D22 = structure_functions(v["y"][l], r_max, dx)
+            _, D33 = structure_functions(w["z"][l], r_max, dx)
+
+            r_list.append(r)
+            D11all.append(D11)
+            D22all.append(D22)
+            D33all.append(D33)
+    print("D11, D22 :", structure_functions(u, v, w, eta*5e3))
+
+    plot_structure_functions(r/eta, D11, D22)
 
     """
     u = np.array([])
