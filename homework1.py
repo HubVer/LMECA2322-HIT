@@ -2,6 +2,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy
 
+# Common parameters
+nu = 1.5e-5  # kinematic viscosity
+L = 2 * np.pi  # domain size
+
+
 
 def fetch_data(i):
     # Fetch velocity data from all pencil files for the i-th component
@@ -37,10 +42,9 @@ def diss_rate(u, nu):
     L = 2*np.pi
     dx = L / 32768
     e_all = []
-    for pencil_set in u.values():
-        for pencil in pencil_set:
-            du_dx = (np.roll(pencil, -2) - 8*np.roll(pencil, -1) + 8*np.roll(pencil, 1) - np.roll(pencil, 2)) / (12 * dx)
-            e_all.append(15*nu*np.mean(du_dx**2))
+    for pencil in u["x"]:
+        du_dx = (np.roll(pencil, -2) - 8*np.roll(pencil, -1) + 8*np.roll(pencil, 1) - np.roll(pencil, 2)) / (12 * dx)
+        e_all.append(15*nu*np.mean(du_dx**2))
     return np.mean(e_all)
 
 
@@ -109,12 +113,19 @@ def Reynolds_Taylor(k, e, nu, lambda_t):
     return lambda_t / nu * np.sqrt(2 * k / 3)
 
 
-def structure_fuctions(velocities):
-    pass
+def structure_fuctions(u, v, w, r):
+    indexes = np.arange(0, len(u["x"][0]), r, dtype=int)
+    D11 = []
+    D22 = []
+    D33 = []
+    for i in range(len(indexes)-1):
+        D11.append(np.mean( (u["x"][0][indexes[i+1]] - u["x"][0][indexes[i]])**2 ))
+        D22.append(np.mean( (v["y"][0][indexes[i+1]] - v["y"][0][indexes[i]])**2 ))
+        D33.append(np.mean( (w["z"][0][indexes[i+1]] - w["z"][0][indexes[i]])**2 ))
+    return np.mean(D11), ( np.mean(D22) + np.mean(D33) )/2
 
 
 if __name__ == "__main__":
-    nu = 1.10555e-5 # kinematic viscosity used  (m^2/s)
 
     u = fetch_data(0)
     v = fetch_data(1)
@@ -127,8 +138,11 @@ if __name__ == "__main__":
     e = diss_rate(u, nu)
     print("dissipation rate e :", e)
 
-    e_i = get_dissation_rate(u)
-    print("dissipation rate e (Igor) :", e_i)
+    eta = Kolomogorov_length_scale(nu,e)
+    print("Kolomogorov length scale eta :", eta)
+    print("rmax :", eta*5e3)
+
+    r = np.linspace(1, eta*5e3, 1000)
 
     """
     u = np.array([])

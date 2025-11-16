@@ -100,7 +100,7 @@ def autocorrelation_normalized(u, r_max, dx):
 
 # Dossier des données
 
-root = Path(_file_).parent / "Data"
+root = Path.cwd() / "Data"
 directions = ["pencils_x", "pencils_y", "pencils_z"]
 
 
