@@ -3,22 +3,10 @@ import matplotlib.pyplot as plt
 import scipy
 
 
-def fetch_data(x):
-    u = {"x": [], "y": [], "z": []}
-    directions = ["x", "y", "z"]
-    for m in directions:
-        for i in range(4):
-            for j in range(4):
-                data = np.loadtxt(f"Data/pencils_{m}/{m}_{i}_{j}.txt")
-                u[m].append(data[:, x])
-    u = np.concatenate([u["x"], u["y"], u["z"]])
-    return u
-
-
 def TKE(u, v, w):
     # Compute the Turbulent Kinetic Energy (TKE) for homgeoneous isotropic turbulence
-    # velocities: numpy array of shape (3, 4, 4, n) containing velocity components where n is the number of data points
-    # returns: scalar value of TKE
+    # u, v, w: numpy arrays containing velocity components
+    # returns: scalar value of isotropic TKE and anisotropic TKE
     return 1.5 * np.mean(u**2), 0.5 * (np.mean(u*u) + np.mean(v*v) + np.mean(w*w))
 
 
@@ -84,22 +72,40 @@ def structure_fuctions(velocities):
 if __name__ == "__main__":
     nu = 1.10555e-5 # kinematic viscosity used  (m^2/s)
 
-    u = fetch_data(0) # fetch u velocity data
-    v = fetch_data(1) # fetch v velocity data
-    w = fetch_data(2) # fetch w velocity data
+    u = np.array([])
+    v = np.array([])
+    w = np.array([])
+    k_iso_all = np.array([])
+    k_anis_all = np.array([])
+    e_all = np.array([])
+    directions = ["x", "y", "z"]
+    for m in directions:
+        for i in range(4):
+            for j in range(4):
+                data = np.loadtxt(f"Data/pencils_{m}/{m}_{i}_{j}.txt")
+                u = np.append(u, data[:, 0])
+                v = np.append(v, data[:, 1])
+                w = np.append(w, data[:, 2])
+                k_all = np.append(k_iso_all, TKE(data[:, 0], data[:, 1], data[:, 2])[0])
+                k_anis_all = np.append(k_anis_all, TKE(data[:, 0], data[:, 1], data[:, 2])[1])
+                e_all = np.append(e_all, diss_rate(data[:, 0], nu))
 
-    k, k_anis = TKE(u, v, w)
-    print("k : "+str(k))
+
+    k_iso, k_anis = np.mean(k_all), np.mean(k_anis_all)
+    print("k isotropic : "+str(k_iso))
     print("k anisotropic : "+str(k_anis))
-    e = diss_rate(u ,nu)
+    e = np.mean(e_all)
     print("epsilon : "+str(e))
-    L = integral_length_scale(k,e)
+    
+    # e = 1.4795797446290537 reference value
+
+    L = integral_length_scale(k_anis,e)
     print("L : "+str(L))
-    Re = Reynolds(k,e,nu)
+    Re = Reynolds(k_anis,e,nu)
     print("Re : "+str(Re))
     eta = Kolomogorov_length_scale(nu,e)
     print("eta : "+str(eta))
-    lamb = Taylor_microscale(k,e)
+    lamb = Taylor_microscale(k_anis,e)
     print("lambda ; "+str(lamb))
-    Re_T = Reynolds_Taylor(k,e,nu,lamb) 
+    Re_T = Reynolds_Taylor(k_anis,e,nu,lamb) 
     print("Re_T : "+str(Re_T))
