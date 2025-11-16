@@ -86,12 +86,12 @@ if __name__ == "__main__":
                 u = np.append(u, data[:, 0])
                 v = np.append(v, data[:, 1])
                 w = np.append(w, data[:, 2])
-                k_all = np.append(k_iso_all, TKE(data[:, 0], data[:, 1], data[:, 2])[0])
+                k_iso_all = np.append(k_iso_all, TKE(data[:, 0], data[:, 1], data[:, 2])[0])
                 k_anis_all = np.append(k_anis_all, TKE(data[:, 0], data[:, 1], data[:, 2])[1])
                 e_all = np.append(e_all, diss_rate(data[:, 0], nu))
 
 
-    k_iso, k_anis = np.mean(k_all), np.mean(k_anis_all)
+    k_iso, k_anis = np.mean(k_iso_all), np.mean(k_anis_all)
     print("k isotropic : "+str(k_iso))
     print("k anisotropic : "+str(k_anis))
     e = np.mean(e_all)
