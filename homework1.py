@@ -3,22 +3,66 @@ import matplotlib.pyplot as plt
 import scipy
 
 
+def fetch_data(i):
+    # Fetch velocity data from all pencil files for the i-th component
+    # i: index of the velocity component to fetch (0 for u, 1 for v, 2 for w)
+    # returns: dictionary with velocities data for x, y, z pencils
+    velocities = {"x": [], "y": [], "z": []}
+    for j in velocities.keys():
+        for m in range(4):
+            for n in range(4):
+                filename = f"Data/pencils_{j}/{j}_{m}_{n}.txt"
+                data = np.loadtxt(filename)
+                velocities[j].append(data[:, i])
+    return velocities
+
 def TKE(u, v, w):
     # Compute the Turbulent Kinetic Energy (TKE) for homgeoneous isotropic turbulence
-    # u, v, w: numpy arrays containing velocity components
+    # u, v, w: dictionnaries of list of arrays containing velocity components
     # returns: scalar value of isotropic TKE and anisotropic TKE
-    return 1.5 * np.mean(u**2), 0.5 * (np.mean(u*u) + np.mean(v*v) + np.mean(w*w))
+    k_iso = np.array([])
+    k_aniso = np.array([])
+    for i in u.keys():
+        for j in range(len(u[i])):
+            k_iso = np.append(k_iso, 1.5 * np.mean(u[i][j]*u[i][j]))
+            k_aniso = np.append(k_aniso, 0.5 * (np.mean(u[i][j]**2) + np.mean(v[i][j]**2) + np.mean(w[i][j]**2)))
+    return np.mean(k_iso), np.mean(k_aniso)
 
 
-def diss_rate(velocities, nu):
+def diss_rate(u, nu):
     # Compute the dissipation rate of TKE
     # TKE: scalar value of Turbulent Kinetic Energy
     # nu: kinematic viscosity
     # returns: scalar value of dissipation rate
     L = 2*np.pi
     dx = L / 32768
-    du_dx = (np.roll(velocities, -2) - 8*np.roll(velocities, -1) + 8*np.roll(velocities, 1) - np.roll(velocities, 2)) / (12 * dx)
-    return 15*nu*np.mean(du_dx**2)
+    e_all = []
+    for pencil_set in u.values():
+        for pencil in pencil_set:
+            du_dx = (np.roll(pencil, -2) - 8*np.roll(pencil, -1) + 8*np.roll(pencil, 1) - np.roll(pencil, 2)) / (12 * dx)
+            e_all.append(15*nu*np.mean(du_dx**2))
+    return np.mean(e_all)
+
+
+def get_pencils(n):
+    u = {"x": [], "y": [], "z": []}
+    directions = ["x", "y", "z"]
+    for m in directions:
+        for i in range(4):
+            for j in range(4):
+                filename = f"Data/pencils_{m}/{m}_{i}_{j}.txt"
+                data = np.loadtxt(filename)
+                u[m].append(data[:, n])
+    return u
+
+
+def get_dissation_rate(u):
+    h = 2*np.pi / 32768
+    res = np.array([])
+    for pencils in u["x"]:
+        dudx = 1/12 * (-np.roll(pencils, 2) + 8 * np.roll(pencils, 1) - 8 * np.roll(pencils, -1) + np.roll(pencils, -2)) / h
+        res = np.concatenate((res, dudx))
+    return 15 * nu * np.mean(res**2)
 
 
 def integral_length_scale(k, e):
@@ -72,6 +116,21 @@ def structure_fuctions(velocities):
 if __name__ == "__main__":
     nu = 1.10555e-5 # kinematic viscosity used  (m^2/s)
 
+    u = fetch_data(0)
+    v = fetch_data(1)
+    w = fetch_data(2)
+
+    k_i, k_a = TKE(u, v, w)
+    print("k isotropic : "+str(k_i))
+    print("k anisotropic : "+str(k_a))
+
+    e = diss_rate(u, nu)
+    print("dissipation rate e :", e)
+
+    e_i = get_dissation_rate(u)
+    print("dissipation rate e (Igor) :", e_i)
+
+    """
     u = np.array([])
     v = np.array([])
     w = np.array([])
@@ -90,6 +149,7 @@ if __name__ == "__main__":
                 k_anis_all = np.append(k_anis_all, TKE(data[:, 0], data[:, 1], data[:, 2])[1])
                 e_all = np.append(e_all, diss_rate(data[:, 0], nu))
 
+    print(np.shape(u))
 
     k_iso, k_anis = np.mean(k_iso_all), np.mean(k_anis_all)
     print("k isotropic : "+str(k_iso))
@@ -99,13 +159,14 @@ if __name__ == "__main__":
     
     # e = 1.4795797446290537 reference value
 
-    L = integral_length_scale(k_anis,e)
+    L = integral_length_scale(k_iso,e)
     print("L : "+str(L))
-    Re = Reynolds(k_anis,e,nu)
+    Re = Reynolds(k_iso,e,nu)
     print("Re : "+str(Re))
     eta = Kolomogorov_length_scale(nu,e)
     print("eta : "+str(eta))
-    lamb = Taylor_microscale(k_anis,e)
+    lamb = Taylor_microscale(k_iso,e)
     print("lambda ; "+str(lamb))
-    Re_T = Reynolds_Taylor(k_anis,e,nu,lamb) 
+    Re_T = Reynolds_Taylor(k_iso,e,nu,lamb) 
     print("Re_T : "+str(Re_T))
+    """
